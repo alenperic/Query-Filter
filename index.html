@@ -41,8 +41,13 @@
             margin-bottom: 20px;
             font-size: 2em;
         }
-        .dropdown {
+        .controls {
             margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        .controls label {
+            margin-right: 10px;
         }
         select {
             padding: 10px;
@@ -51,7 +56,55 @@
             color: #ddd;
             border: none;
             border-radius: 4px;
+            margin-right: 20px;
         }
+        /* Switch styling */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            margin-left: 20px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #1e2129;
+            transition: .4s;
+            border-radius: 34px;
+            border: 1px solid #ddd;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: #ddd;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #4caf50;
+        }
+        input:focus + .slider {
+            box-shadow: 0 0 1px #4caf50;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+            background-color: white;
+        }
+        /* End of switch styling */
         #wrapper {
             display: flex;
             justify-content: space-between;
@@ -88,6 +141,11 @@
             width: 80%;
             font-size: 0.9em;
         }
+        /* Styling for the "Dedicated Leak Sites" label */
+        .switch-label {
+            margin-left: 10px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -100,7 +158,7 @@
 
     <div id="title">Filter Query Generator</div>
 
-    <div class="dropdown">
+    <div class="controls">
         <label for="indicatorSelect">Select Indicator Type:</label>
         <select id="indicatorSelect">
             <option value="phrase">Phrase</option>
@@ -110,6 +168,12 @@
             <option value="iprange">IP Range</option>
             <option value="typosquatting_term">Typo-Squatting</option>
         </select>
+
+        <label class="switch">
+            <input type="checkbox" id="dedicatedLeakSitesToggle">
+            <span class="slider"></span>
+        </label>
+        <span class="switch-label">Dedicated Leak Sites</span>
     </div>
 
     <div id="wrapper">
@@ -130,11 +194,13 @@
         const textInput = document.getElementById('textInput');
         const filterOutput = document.getElementById('filterOutput');
         const indicatorSelect = document.getElementById('indicatorSelect');
+        const dedicatedLeakSitesToggle = document.getElementById('dedicatedLeakSitesToggle');
 
         // Function to update the output based on input and selected indicator
         function updateOutput() {
             const inputText = textInput.value;
             const selectedIndicator = indicatorSelect.value;
+            const includeDedicatedLeakSites = dedicatedLeakSitesToggle.checked;
 
             // Split the input text into lines and remove empty lines
             const lines = inputText.split('\n').map(line => line.trim()).filter(line => line !== '');
@@ -152,12 +218,22 @@
 
                 if (validItems.length === 1) {
                     // Single valid item, output as (y:'x')
-                    const outputLine = `(${selectedIndicator}:'${validItems[0]}')`;
+                    let outputLine = `(${selectedIndicator}:'${validItems[0]}')`;
+
+                    if (includeDedicatedLeakSites) {
+                        outputLine += `+(source_category:'dedicated_leak_site')`;
+                    }
+
                     outputLines.push(outputLine);
                 } else {
                     // Multiple valid items, output as (y:'x1')+(y:'x2')+...
                     const entries = validItems.map(item => `(${selectedIndicator}:'${item}')`);
-                    const outputLine = entries.join('+');
+                    let outputLine = entries.join('+');
+
+                    if (includeDedicatedLeakSites) {
+                        outputLine += `+(source_category:'dedicated_leak_site')`;
+                    }
+
                     outputLines.push(outputLine);
                 }
             }
@@ -169,6 +245,7 @@
         // Add event listeners
         textInput.addEventListener('input', updateOutput);
         indicatorSelect.addEventListener('change', updateOutput);
+        dedicatedLeakSitesToggle.addEventListener('change', updateOutput);
 
         // Copy to clipboard function
         function copyToClipboard() {
