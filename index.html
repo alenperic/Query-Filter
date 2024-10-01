@@ -145,15 +145,18 @@
                 // Split line into items separated by spaces and remove empty items
                 const items = line.split(/\s+/).filter(item => item !== '');
 
-                if (items.length === 0) continue;
+                // Filter out items that are only one character long
+                const validItems = items.filter(item => item.length > 1);
 
-                if (items.length === 1) {
-                    // Single item, output as (y:'x')
-                    const outputLine = `(${selectedIndicator}:'${items[0]}')`;
+                if (validItems.length === 0) continue;
+
+                if (validItems.length === 1) {
+                    // Single valid item, output as (y:'x')
+                    const outputLine = `(${selectedIndicator}:'${validItems[0]}')`;
                     outputLines.push(outputLine);
                 } else {
-                    // Multiple items, output as (y:'x1')+(y:'x2')+...
-                    const entries = items.map(item => `(${selectedIndicator}:'${item}')`);
+                    // Multiple valid items, output as (y:'x1')+(y:'x2')+...
+                    const entries = validItems.map(item => `(${selectedIndicator}:'${item}')`);
                     const outputLine = entries.join('+');
                     outputLines.push(outputLine);
                 }
@@ -177,5 +180,3 @@
     </script>
 </body>
 </html>
-
-
