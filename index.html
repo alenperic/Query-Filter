@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Filter Query Generator</title>
+    <meta name="description" content="Generate filter queries from your indicators locally without any server interaction.">
+    <meta name="keywords" content="filter query, indicator converter, cybersecurity, online tool, text processing, security, web application">
+    <meta name="author" content="alenperic">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background-color: #2b2f3a;
+            color: white;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        .header {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+        .header img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            vertical-align: middle;
+        }
+        #title {
+            margin-top: 60px;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+        .dropdown {
+            margin-bottom: 20px;
+        }
+        select {
+            padding: 10px;
+            font-size: 16px;
+            background-color: #1e2129;
+            color: #ddd;
+            border: none;
+            border-radius: 4px;
+        }
+        #wrapper {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+        }
+        textarea {
+            width: 48%;
+            height: 200px;
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px;
+            background-color: #1e2129;
+            color: #ddd;
+            border: none;
+            border-radius: 4px;
+            overflow: auto;
+        }
+        .copy-button {
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #4caf50; /* Green background */
+            border: none;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .description {
+            margin-top: 20px;
+            text-align: center;
+            width: 80%;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="https://github.com/alenperic" target="_blank">
+            <img src="https://avatars.githubusercontent.com/u/20021065?v=4" alt="GitHub Profile Icon" />
+            alenperic
+        </a>
+    </div>
+
+    <div id="title">Filter Query Generator</div>
+
+    <div class="dropdown">
+        <label for="indicatorSelect">Select Indicator Type:</label>
+        <select id="indicatorSelect">
+            <option value="phrase">Phrase</option>
+            <option value="keyword">Word</option>
+            <option value="emaildomain">Email Domain (Corporate)</option>
+            <option value="domain">Domain</option>
+            <option value="iprange">IP Range</option>
+            <option value="typosquatting_term">Typo-Squatting</option>
+        </select>
+    </div>
+
+    <div id="wrapper">
+        <textarea id="textInput" placeholder="Enter your indicators here..."></textarea>
+        <textarea id="filterOutput" placeholder="Filter queries will appear here..." readonly></textarea>
+    </div>
+
+    <button class="copy-button" onclick="copyToClipboard()">Copy to Clipboard</button>
+
+    <div class="description">
+        <p>
+            Select the indicator type, paste your indicators in the left box, and see the filter queries generated on the right. Use the button below to copy the results.
+        </p>
+    </div>
+
+    <script>
+        // Get references to the DOM elements
+        const textInput = document.getElementById('textInput');
+        const filterOutput = document.getElementById('filterOutput');
+        const indicatorSelect = document.getElementById('indicatorSelect');
+
+        // Function to update the output based on input and selected indicator
+        function updateOutput() {
+            const inputText = textInput.value;
+            const selectedIndicator = indicatorSelect.value;
+
+            // Split the input text into lines and remove empty lines
+            const lines = inputText.split('\n').map(line => line.trim()).filter(line => line !== '');
+
+            let outputLines = [];
+
+            for (const line of lines) {
+                // Split line into items separated by spaces and remove empty items
+                const items = line.split(/\s+/).filter(item => item !== '');
+
+                if (items.length === 0) continue;
+
+                if (items.length === 1) {
+                    // Single item, output as (y:'x')
+                    const outputLine = `(${selectedIndicator}:'${items[0]}')`;
+                    outputLines.push(outputLine);
+                } else {
+                    // Multiple items, output as (y:'x1')+(y:'x2')+...
+                    const entries = items.map(item => `(${selectedIndicator}:'${item}')`);
+                    const outputLine = entries.join('+');
+                    outputLines.push(outputLine);
+                }
+            }
+
+            // Join the outputLines with newlines
+            filterOutput.value = outputLines.join('\n');
+        }
+
+        // Add event listeners
+        textInput.addEventListener('input', updateOutput);
+        indicatorSelect.addEventListener('change', updateOutput);
+
+        // Copy to clipboard function
+        function copyToClipboard() {
+            filterOutput.select();
+            navigator.clipboard.writeText(filterOutput.value)
+                .then(() => alert('Copied to clipboard!'))
+                .catch((err) => console.error('Error in copying text: ', err));
+        }
+    </script>
+</body>
+</html>
+
+
