@@ -44,10 +44,13 @@
         .controls {
             margin-bottom: 20px;
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            align-items: flex-start;
         }
-        .controls label {
-            margin-right: 10px;
+        .controls .control-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
         }
         select {
             padding: 10px;
@@ -56,7 +59,6 @@
             color: #ddd;
             border: none;
             border-radius: 4px;
-            margin-right: 20px;
         }
         /* Switch styling */
         .switch {
@@ -64,7 +66,7 @@
             display: inline-block;
             width: 60px;
             height: 34px;
-            margin-left: 20px;
+            margin-right: 10px;
         }
         .switch input {
             opacity: 0;
@@ -130,10 +132,10 @@
             color: white;
             text-align: center;
             text-decoration: none;
-            display: inline-block;
             font-size: 16px;
             cursor: pointer;
             border-radius: 4px;
+            align-self: center;
         }
         .description {
             margin-top: 20px;
@@ -141,9 +143,8 @@
             width: 80%;
             font-size: 0.9em;
         }
-        /* Styling for the "Dedicated Leak Sites" label */
+        /* Styling for the switch labels */
         .switch-label {
-            margin-left: 10px;
             font-size: 16px;
         }
     </style>
@@ -159,21 +160,35 @@
     <div id="title">Filter Query Generator</div>
 
     <div class="controls">
-        <label for="indicatorSelect">Select Indicator Type:</label>
-        <select id="indicatorSelect">
-            <option value="phrase">Phrase</option>
-            <option value="keyword">Word</option>
-            <option value="emaildomain">Email Domain (Corporate)</option>
-            <option value="domain">Domain</option>
-            <option value="iprange">IP Range</option>
-            <option value="typosquatting_term">Typo-Squatting</option>
-        </select>
+        <div class="control-group">
+            <label for="indicatorSelect">Select Indicator Type:</label>
+            <select id="indicatorSelect">
+                <option value="phrase">Phrase</option>
+                <option value="keyword">Word</option>
+                <option value="emaildomain">Email Domain (Corporate)</option>
+                <option value="domain">Domain</option>
+                <option value="iprange">IP Range</option>
+                <option value="typosquatting_term">Typo-Squatting</option>
+            </select>
+        </div>
 
-        <label class="switch">
-            <input type="checkbox" id="dedicatedLeakSitesToggle">
-            <span class="slider"></span>
-        </label>
-        <span class="switch-label">Dedicated Leak Sites</span>
+        <div class="control-group">
+            <!-- Dedicated Leak Sites Switch -->
+            <label class="switch">
+                <input type="checkbox" id="dedicatedLeakSitesToggle">
+                <span class="slider"></span>
+            </label>
+            <span class="switch-label">Dedicated Leak Sites</span>
+        </div>
+
+        <div class="control-group">
+            <!-- Code Repository Monitoring Switch -->
+            <label class="switch">
+                <input type="checkbox" id="codeRepoToggle">
+                <span class="slider"></span>
+            </label>
+            <span class="switch-label">Code Repository Monitoring</span>
+        </div>
     </div>
 
     <div id="wrapper">
@@ -195,12 +210,61 @@
         const filterOutput = document.getElementById('filterOutput');
         const indicatorSelect = document.getElementById('indicatorSelect');
         const dedicatedLeakSitesToggle = document.getElementById('dedicatedLeakSitesToggle');
+        const codeRepoToggle = document.getElementById('codeRepoToggle');
+
+        // Terms for Code Repository Monitoring
+        const codeRepoTerms = [
+            // Authentication-related
+            'api_key',
+            'secret_key',
+            'access_token',
+            'refresh_token',
+            'bearer_token',
+            'oauth_token',
+            'jwt_secret',
+            // Database-related
+            'db_password',
+            'database_url',
+            'connection_string',
+            'mongo_uri',
+            // Cloud service-related
+            'aws_access_key_id',
+            'aws_secret_access_key',
+            'azure_connection_string',
+            'gcp_credentials',
+            // Encryption-related
+            'private_key',
+            'public_key',
+            'encryption_key',
+            'decryption_key',
+            // Application-specific
+            'app_secret',
+            'app_id',
+            'consumer_key',
+            'consumer_secret',
+            // Variations and formats
+            'passwd',
+            'pwd',
+            'user:pass',
+            'username:password',
+            'api_token',
+            'secret_token',
+            // Common prefixes and suffixes
+            'prod_',
+            'dev_',
+            'test_',
+            '_key',
+            '_secret',
+            '_token'
+            // File extensions (removed as they contain '.')
+        ];
 
         // Function to update the output based on input and selected indicator
         function updateOutput() {
             const inputText = textInput.value;
             const selectedIndicator = indicatorSelect.value;
             const includeDedicatedLeakSites = dedicatedLeakSitesToggle.checked;
+            const includeCodeRepo = codeRepoToggle.checked;
 
             // Split the input text into lines and remove empty lines
             const lines = inputText.split('\n').map(line => line.trim()).filter(line => line !== '');
@@ -216,26 +280,39 @@
 
                 if (validItems.length === 0) continue;
 
-                if (validItems.length === 1) {
-                    // Single valid item, output as (y:'x')
-                    let outputLine = `(${selectedIndicator}:'${validItems[0]}')`;
+                let entries = validItems.map(item => `(${selectedIndicator}:'${item}')`);
+                let outputLine = entries.join('+');
 
-                    if (includeDedicatedLeakSites) {
-                        outputLine += `+(source_category:'dedicated_leak_site')`;
-                    }
-
-                    outputLines.push(outputLine);
-                } else {
-                    // Multiple valid items, output as (y:'x1')+(y:'x2')+...
-                    const entries = validItems.map(item => `(${selectedIndicator}:'${item}')`);
-                    let outputLine = entries.join('+');
-
-                    if (includeDedicatedLeakSites) {
-                        outputLine += `+(source_category:'dedicated_leak_site')`;
-                    }
-
-                    outputLines.push(outputLine);
+                // Append Code Repository Monitoring terms if toggle is on
+                if (includeCodeRepo) {
+                    const codeRepoEntries = codeRepoTerms
+                        .filter(term => !term.includes('.'))
+                        .map(term => `keyword:'${term}'`);
+                    const codeRepoString = `(${codeRepoEntries.join(',')})`;
+                    outputLine += `+${codeRepoString}`;
                 }
+
+                // Append Dedicated Leak Sites if toggle is on
+                if (includeDedicatedLeakSites) {
+                    outputLine += `+(source_category:'dedicated_leak_site')`;
+                }
+
+                outputLines.push(outputLine);
+            }
+
+            // If no lines are entered but Code Repo Monitoring is toggled on
+            if (lines.length === 0 && includeCodeRepo) {
+                const codeRepoEntries = codeRepoTerms
+                    .filter(term => !term.includes('.'))
+                    .map(term => `keyword:'${term}'`);
+                const codeRepoString = `(${codeRepoEntries.join(',')})`;
+                let outputLine = codeRepoString;
+
+                if (includeDedicatedLeakSites) {
+                    outputLine += `+(source_category:'dedicated_leak_site')`;
+                }
+
+                outputLines.push(outputLine);
             }
 
             // Join the outputLines with newlines
@@ -246,6 +323,7 @@
         textInput.addEventListener('input', updateOutput);
         indicatorSelect.addEventListener('change', updateOutput);
         dedicatedLeakSitesToggle.addEventListener('change', updateOutput);
+        codeRepoToggle.addEventListener('change', updateOutput);
 
         // Copy to clipboard function
         function copyToClipboard() {
