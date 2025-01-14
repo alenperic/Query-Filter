@@ -60,7 +60,6 @@
             border: none;
             border-radius: 4px;
         }
-        /* Switch styling */
         .switch {
             position: relative;
             display: inline-block;
@@ -106,7 +105,6 @@
             transform: translateX(26px);
             background-color: white;
         }
-        /* End of switch styling */
         #wrapper {
             display: flex;
             justify-content: space-between;
@@ -127,7 +125,7 @@
         .copy-button {
             padding: 10px;
             margin-top: 10px;
-            background-color: #4caf50; /* Green background */
+            background-color: #4caf50;
             border: none;
             color: white;
             text-align: center;
@@ -143,7 +141,6 @@
             width: 80%;
             font-size: 0.9em;
         }
-        /* Styling for the switch labels */
         .switch-label {
             font-size: 16px;
         }
@@ -173,7 +170,6 @@
         </div>
 
         <div class="control-group">
-            <!-- Dedicated Leak Sites Switch -->
             <label class="switch">
                 <input type="checkbox" id="dedicatedLeakSitesToggle">
                 <span class="slider"></span>
@@ -182,7 +178,6 @@
         </div>
 
         <div class="control-group">
-            <!-- Code Repository Monitoring Switch -->
             <label class="switch">
                 <input type="checkbox" id="codeRepoToggle">
                 <span class="slider"></span>
@@ -205,94 +200,42 @@
     </div>
 
     <script>
-        // Get references to the DOM elements
         const textInput = document.getElementById('textInput');
         const filterOutput = document.getElementById('filterOutput');
         const indicatorSelect = document.getElementById('indicatorSelect');
         const dedicatedLeakSitesToggle = document.getElementById('dedicatedLeakSitesToggle');
         const codeRepoToggle = document.getElementById('codeRepoToggle');
 
-        // Terms for Code Repository Monitoring
         const codeRepoTerms = [
-            // Authentication-related
-            'api_key',
-            'secret_key',
-            'access_token',
-            'refresh_token',
-            'bearer_token',
-            'oauth_token',
-            'jwt_secret',
-            // Database-related
-            'db_password',
-            'database_url',
-            'connection_string',
-            'mongo_uri',
-            // Cloud service-related
-            'aws_access_key_id',
-            'aws_secret_access_key',
-            'azure_connection_string',
-            'gcp_credentials',
-            // Encryption-related
-            'private_key',
-            'public_key',
-            'encryption_key',
-            'decryption_key',
-            // Application-specific
-            'app_secret',
-            'app_id',
-            'consumer_key',
-            'consumer_secret',
-            // Variations and formats
-            'passwd',
-            'pwd',
-            'user:pass',
-            'username:password',
-            'api_token',
-            'secret_token',
-            // Common prefixes and suffixes
-            'prod_',
-            'dev_',
-            'test_',
-            '_key',
-            '_secret',
-            '_token'
-            // File extensions (removed as they contain '.')
+            'api_key', 'secret_key', 'access_token', 'refresh_token',
+            'db_password', 'connection_string', 'aws_access_key_id',
+            'private_key', 'public_key', 'app_secret', 'api_token'
         ];
 
-        // Function to update the output based on input and selected indicator
         function updateOutput() {
             const inputText = textInput.value;
             const selectedIndicator = indicatorSelect.value;
             const includeDedicatedLeakSites = dedicatedLeakSitesToggle.checked;
             const includeCodeRepo = codeRepoToggle.checked;
 
-            // Split the input text into lines and remove empty lines
             const lines = inputText.split('\n').map(line => line.trim()).filter(line => line !== '');
 
             let outputLines = [];
 
             for (const line of lines) {
-                // Split line into items separated by spaces and remove empty items
-                const items = line.split(/\s+/).filter(item => item !== '');
-
-                // Filter out items that are only one character long
+                const items = line.split(/\s{2,}/).filter(item => item !== '');
                 const validItems = items.filter(item => item.length > 1);
-
                 if (validItems.length === 0) continue;
 
                 let entries = validItems.map(item => `(${selectedIndicator}:'${item}')`);
                 let outputLine = entries.join('+');
 
-                // Append Code Repository Monitoring terms if toggle is on
                 if (includeCodeRepo) {
-                    const codeRepoEntries = codeRepoTerms
-                        .filter(term => !term.includes('.'))
-                        .map(term => `keyword:'${term}'`);
+                    const codeRepoEntries = codeRepoTerms.map(term => `keyword:'${term}'`);
                     const codeRepoString = `(${codeRepoEntries.join(',')})`;
                     outputLine += `+${codeRepoString}`;
                 }
 
-                // Append Dedicated Leak Sites if toggle is on
                 if (includeDedicatedLeakSites) {
                     outputLine += `+(source_category:'dedicated_leak_site')`;
                 }
@@ -300,13 +243,9 @@
                 outputLines.push(outputLine);
             }
 
-            // If no lines are entered but Code Repo Monitoring is toggled on
             if (lines.length === 0 && includeCodeRepo) {
-                const codeRepoEntries = codeRepoTerms
-                    .filter(term => !term.includes('.'))
-                    .map(term => `keyword:'${term}'`);
-                const codeRepoString = `(${codeRepoEntries.join(',')})`;
-                let outputLine = codeRepoString;
+                const codeRepoEntries = codeRepoTerms.map(term => `keyword:'${term}'`);
+                let outputLine = `(${codeRepoEntries.join(',')})`;
 
                 if (includeDedicatedLeakSites) {
                     outputLine += `+(source_category:'dedicated_leak_site')`;
@@ -315,22 +254,19 @@
                 outputLines.push(outputLine);
             }
 
-            // Join the outputLines with newlines
             filterOutput.value = outputLines.join('\n');
         }
 
-        // Add event listeners
         textInput.addEventListener('input', updateOutput);
         indicatorSelect.addEventListener('change', updateOutput);
         dedicatedLeakSitesToggle.addEventListener('change', updateOutput);
         codeRepoToggle.addEventListener('change', updateOutput);
 
-        // Copy to clipboard function
         function copyToClipboard() {
             filterOutput.select();
             navigator.clipboard.writeText(filterOutput.value)
                 .then(() => alert('Copied to clipboard!'))
-                .catch((err) => console.error('Error in copying text: ', err));
+                .catch(err => console.error('Error copying text: ', err));
         }
     </script>
 </body>
